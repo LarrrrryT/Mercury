@@ -1,7 +1,32 @@
 import Foundation
 
 open class Mercury {
-    
+
+    public struct Article: Codable {
+        let title: String
+        let author: String?
+        let datePublished: String?
+        let leadImageUrl: String?
+        let content: String?
+        let url: String?
+        let wordCount: Int?
+        let domain: String?
+    }
+
+    static public func parse(_ resource: URL, withFormat format: ContentType = .html) async throws -> Article {
+        let currentFile = URL(fileURLWithPath: #file)
+        let pwd = currentFile.deletingLastPathComponent()
+        let nodeURL = pwd.appendingPathComponent("node")
+        let mercuryCLIURL = pwd.appendingPathComponent("cli.js")
+        let prototypeString = self.shell("\(nodeURL.path) \(mercuryCLIURL.path) \(resource.absoluteString) --format=\(format.rawValue)")
+        let data = Data(prototypeString.utf8)
+        do {
+            return try JSONDecoder().decode(Article.self, from: data)
+        } catch {
+            throw ServiceError.error(error)
+        }
+    }
+
     static public func parse(_ resource: URL, withFormat format: ContentType = .html, completion: @escaping (_ result: [String: Any]) -> Void) {
         let currentFile = URL(fileURLWithPath: #file)
         let pwd = currentFile.deletingLastPathComponent()
@@ -49,5 +74,8 @@ open class Mercury {
         case markdown = "markdown"
         case text = "text"
     }
-    
+
+    enum ServiceError: Error {
+        case error(Error)
+    }
 }
