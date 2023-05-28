@@ -7,6 +7,7 @@ open class Mercury {
         public let author: String?
         public let datePublished: String?
         public let leadImageUrl: String?
+        public let excerpt: String?
         public let content: String?
         public let url: String?
         public let wordCount: Int?
