@@ -3,14 +3,14 @@ import Foundation
 open class Mercury {
 
     public struct Article: Codable {
-        let title: String
-        let author: String?
-        let datePublished: String?
-        let leadImageUrl: String?
-        let content: String?
-        let url: String?
-        let wordCount: Int?
-        let domain: String?
+        public let title: String
+        public let author: String?
+        public let datePublished: String?
+        public let leadImageUrl: String?
+        public let content: String?
+        public let url: String?
+        public let wordCount: Int?
+        public let domain: String?
     }
 
     static public func parse(_ resource: URL, withFormat format: ContentType = .html) async throws -> Article {
