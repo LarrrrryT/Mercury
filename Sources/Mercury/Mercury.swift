@@ -22,7 +22,9 @@ open class Mercury {
         let prototypeString = self.shell("\(nodeURL.path) \(mercuryCLIURL.path) \(resource.absoluteString) --format=\(format.rawValue)")
         let data = Data(prototypeString.utf8)
         do {
-            return try JSONDecoder().decode(Article.self, from: data)
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            return try decoder.decode(Article.self, from: data)
         } catch {
             throw ServiceError.error(error)
         }
