@@ -52,10 +52,16 @@ open class Mercury {
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data)
             if let errorResponse = errorResponse, errorResponse.error && errorResponse.failed {
+                if verbose {
+                    print("Valid Error Response: \(errorResponse)")
+                }
                 continuation.resume(throwing: ServiceError.noData)
                 return
             }
             
+            if verbose {
+                print("Returning Data: \(data)")
+            }
             continuation.resume(returning: data)
         }
     }
