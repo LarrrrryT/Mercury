@@ -14,7 +14,7 @@ open class Mercury {
         public let domain: String?
     }
 
-    static public func parse(_ resource: URL, 
+    static public func parse(resource: URL,
                              userAgent: String,
                              withFormat format: ContentType = .html,
                              verbose: Bool = false) async throws -> Article {
