@@ -48,6 +48,7 @@ open class Mercury {
                     print("did end, status: \(process.terminationStatus)")
                     print("did end, reason: \(process.terminationReason)")
                 }
+                continuation.resume(throwing: ServiceError.noData)
             }
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data)
