@@ -14,16 +14,16 @@ open class Mercury {
         public let domain: String?
     }
 
-    static public func parse(_ resource: URL, withFormat format: ContentType = .html) async throws -> Article {
+    static public func parse(_ resource: URL, 
+                             withFormat format: ContentType = .html,
+                             verbose: Bool = false) async throws -> Article {
         let currentFile = URL(fileURLWithPath: #file)
         let pwd = currentFile.deletingLastPathComponent()
         let nodeURL = pwd.appendingPathComponent("node")
         let mercuryCLIURL = pwd.appendingPathComponent("cli.js")
 
         do {
-            let prototypeString = try self.shell("\(nodeURL.path) \(mercuryCLIURL.path) \(resource.absoluteString) --format=\(format.rawValue)")
-            let data = Data(prototypeString.utf8)
-            
+            let data = self.shell("\(nodeURL.path) \(mercuryCLIURL.path) \(resource.absoluteString) --format=\(format.rawValue)")
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = .convertFromSnakeCase
             return try decoder.decode(Article.self, from: data)
@@ -31,35 +31,8 @@ open class Mercury {
             throw ServiceError.error(error)
         }
     }
-
-    static public func parse(_ resource: URL, withFormat format: ContentType = .html, completion: @escaping (_ result: [String: Any]) -> Void) {
-        let currentFile = URL(fileURLWithPath: #file)
-        let pwd = currentFile.deletingLastPathComponent()
-        let nodeURL = pwd.appendingPathComponent("node")
-        let mercuryCLIURL = pwd.appendingPathComponent("cli.js")
-        DispatchQueue.global(qos: .userInitiated).async {
-            var output = [String: Any]()
-            do {
-                let prototypeString = try self.shell("\(nodeURL.path) \(mercuryCLIURL.path) \(resource.absoluteString) --format=\(format.rawValue)")
-                let data = Data(prototypeString.utf8)
-                
-                // To make sure this JSON is in the format we expect.
-                if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
-                    output = json
-                }
-                DispatchQueue.main.async {
-                    completion(output)
-                }
-            } catch let error as NSError {
-                print("Mercury failed to load: \(error.localizedDescription)\nThe following string could not be converted to a dictionary")
-                DispatchQueue.main.async {
-                    completion([:])
-                }
-            }
-        }
-    }
     
-    class func shell(_ command: String) throws -> String {
+    class func shell(_ command: String) -> Data {
         let task = Process()
         let pipe = Pipe()
         
@@ -69,11 +42,7 @@ open class Mercury {
         task.launchPath = "/bin/zsh"
         task.launch()
         
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        guard let output = String(data: data, encoding: .utf8) else {
-            throw ServiceError.outputError
-        }
-        return output
+        return pipe.fileHandleForReading.readDataToEndOfFile()
     }
     
     public enum ContentType: String {
