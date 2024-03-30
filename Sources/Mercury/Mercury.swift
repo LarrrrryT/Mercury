@@ -23,7 +23,7 @@ open class Mercury {
         let mercuryCLIURL = pwd.appendingPathComponent("cli.js")
 
         do {
-            let data = self.shell("\(nodeURL.path) \(mercuryCLIURL.path) \(resource.absoluteString) --format=\(format.rawValue)")
+            let data = self.shell("\(nodeURL.path) \(mercuryCLIURL.path) \(resource.absoluteString) --format=\(format.rawValue)", verbose: verbose)
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = .convertFromSnakeCase
             return try decoder.decode(Article.self, from: data)
@@ -32,15 +32,21 @@ open class Mercury {
         }
     }
     
-    class func shell(_ command: String) -> Data {
-        let task = Process()
+    class func shell(_ command: String, verbose: Bool) -> Data {
+        let process = Process()
         let pipe = Pipe()
         
-        task.standardOutput = pipe
-        task.standardError = pipe
-        task.arguments = ["-c", command]
-        task.launchPath = "/bin/zsh"
-        task.launch()
+        process.standardOutput = pipe
+        process.standardError = pipe
+        process.arguments = ["-c", command]
+        process.launchPath = "/bin/zsh"
+        process.launch()
+        
+        if verbose {
+            process.terminationHandler = { _ in
+                print("did end, status: \(process.terminationStatus)")
+            }
+        }
         
         return pipe.fileHandleForReading.readDataToEndOfFile()
     }
