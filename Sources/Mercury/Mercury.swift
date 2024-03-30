@@ -43,13 +43,13 @@ open class Mercury {
             process.arguments = ["-c", command]
             process.launchPath = "/bin/zsh"
             process.launch()
-            process.terminationHandler = { _ in
-                if verbose {
-                    print("did end, status: \(process.terminationStatus)")
-                    print("did end, reason: \(process.terminationReason)")
-                }
-                continuation.resume(throwing: ServiceError.noData)
-            }
+//            process.terminationHandler = { _ in
+//                if verbose {
+//                    print("did end, status: \(process.terminationStatus)")
+//                    print("did end, reason: \(process.terminationReason)")
+//                }
+//                continuation.resume(throwing: ServiceError.noData)
+//            }
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data)
             if let errorResponse = errorResponse, errorResponse.error && errorResponse.failed {
