@@ -15,6 +15,7 @@ open class Mercury {
     }
 
     static public func parse(_ resource: URL, 
+                             userAgent: String,
                              withFormat format: ContentType = .html,
                              verbose: Bool = false) async throws -> Article {
         let currentFile = URL(fileURLWithPath: #file)
@@ -23,7 +24,7 @@ open class Mercury {
         let mercuryCLIURL = pwd.appendingPathComponent("cli.js")
 
         do {
-            let command = "\(nodeURL.path) \(mercuryCLIURL.path) \(resource.absoluteString) --format=\(format.rawValue)"
+            let command = "\(nodeURL.path) \(mercuryCLIURL.path) \(resource.absoluteString) --format=\(format.rawValue) --header.user_agent=\(userAgent)"
             let data =  try await Self.shell(command, verbose: verbose)
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = .convertFromSnakeCase
