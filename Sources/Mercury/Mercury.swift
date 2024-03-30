@@ -19,9 +19,11 @@ open class Mercury {
         let pwd = currentFile.deletingLastPathComponent()
         let nodeURL = pwd.appendingPathComponent("node")
         let mercuryCLIURL = pwd.appendingPathComponent("cli.js")
-        let prototypeString = self.shell("\(nodeURL.path) \(mercuryCLIURL.path) \(resource.absoluteString) --format=\(format.rawValue)")
-        let data = Data(prototypeString.utf8)
+
         do {
+            let prototypeString = try self.shell("\(nodeURL.path) \(mercuryCLIURL.path) \(resource.absoluteString) --format=\(format.rawValue)")
+            let data = Data(prototypeString.utf8)
+            
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = .convertFromSnakeCase
             return try decoder.decode(Article.self, from: data)
@@ -37,9 +39,10 @@ open class Mercury {
         let mercuryCLIURL = pwd.appendingPathComponent("cli.js")
         DispatchQueue.global(qos: .userInitiated).async {
             var output = [String: Any]()
-            let prototypeString = self.shell("\(nodeURL.path) \(mercuryCLIURL.path) \(resource.absoluteString) --format=\(format.rawValue)")
-            let data = Data(prototypeString.utf8)
             do {
+                let prototypeString = try self.shell("\(nodeURL.path) \(mercuryCLIURL.path) \(resource.absoluteString) --format=\(format.rawValue)")
+                let data = Data(prototypeString.utf8)
+                
                 // To make sure this JSON is in the format we expect.
                 if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
                     output = json
@@ -48,7 +51,7 @@ open class Mercury {
                     completion(output)
                 }
             } catch let error as NSError {
-                print("Mercury failed to load: \(error.localizedDescription)\nThe following string could not be converted to a dictionary: \(prototypeString)")
+                print("Mercury failed to load: \(error.localizedDescription)\nThe following string could not be converted to a dictionary")
                 DispatchQueue.main.async {
                     completion([:])
                 }
@@ -56,7 +59,7 @@ open class Mercury {
         }
     }
     
-    class func shell(_ command: String) -> String {
+    class func shell(_ command: String) throws -> String {
         let task = Process()
         let pipe = Pipe()
         
@@ -67,8 +70,9 @@ open class Mercury {
         task.launch()
         
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        let output = String(data: data, encoding: .utf8)!
-        
+        guard let output = String(data: data, encoding: .utf8) else {
+            throw ServiceError.outputError
+        }
         return output
     }
     
@@ -80,5 +84,6 @@ open class Mercury {
 
     enum ServiceError: Error {
         case error(Error)
+        case outputError
     }
 }
