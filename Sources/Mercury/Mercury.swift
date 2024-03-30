@@ -24,9 +24,7 @@ open class Mercury {
 
         do {
             let command = "\(nodeURL.path) \(mercuryCLIURL.path) \(resource.absoluteString) --format=\(format.rawValue)"
-            guard let data = await Self.shell(command, verbose: verbose) else {
-                throw ServiceError.noData
-            }
+            let data =  try await Self.shell(command, verbose: verbose)
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = .convertFromSnakeCase
             return try decoder.decode(Article.self, from: data)
@@ -35,8 +33,8 @@ open class Mercury {
         }
     }
     
-    static func shell(_ command: String, verbose: Bool) async -> Data? {
-        await withCheckedContinuation { continuation in
+    static func shell(_ command: String, verbose: Bool) async throws -> Data {
+        try await withCheckedThrowingContinuation { continuation in
             let process = Process()
             let pipe = Pipe()
             
@@ -50,12 +48,22 @@ open class Mercury {
                     print("did end, status: \(process.terminationStatus)")
                     print("did end, reason: \(process.terminationReason)")
                 }
-                continuation.resume(returning: nil)
+            }
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            if let errorResponse = errorResponse, errorResponse.error && errorResponse.failed {
+                continuation.resume(throwing: ServiceError.noData)
+                return
             }
             
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
             continuation.resume(returning: data)
         }
+    }
+    
+    struct ErrorResponse: Codable {
+        let error: Bool
+        let message: String
+        let failed: Bool
     }
     
     public enum ContentType: String {
